@@ -174,3 +174,7 @@ ops/                Caddy configuration and backup script
 compose*.yaml       Development and production stacks
 Makefile            Every development and operations command
 ```
+
+## License
+
+Released under the [MIT License](LICENSE).
