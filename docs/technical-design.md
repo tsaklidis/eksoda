@@ -936,7 +936,7 @@ codes, retry policies, exception hierarchy), and
 | Provider status handling | `SafeFetcher.get(accept_statuses=…)` | Providers interpret odd statuses (Entersoft answers 418 for unknown documents) |
 | Follow-up requests | Entersoft `fetch()` | Same host only, and the framed document must have the same ids (otherwise `inconsistent_source`) |
 | Fixture harness | `tests/receipts/test_fixtures.py` | Every `tests/fixtures/<provider>/<name>.meta.json` is a golden test. No test code is needed per receipt |
-| Skills | `.claude/skills/add-provider`, `receipt-fixture` | Repeatable procedures for a new source, a new layout or a new receipt |
+| Runbook | `docs/deployment.md` §8 | The procedure for a new source, a new layout or a changed page |
 
 **Providers as built:**
 

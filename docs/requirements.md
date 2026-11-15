@@ -405,7 +405,7 @@ are:
 ### 7.4 Adding a provider
 
 New formats will keep appearing, so the system is built for change.
-The procedure is the `add-provider` skill.
+The procedure is the provider runbook in `docs/deployment.md` §8.
 
 - **A new source** needs a provider package (URL recognition, fetch,
   one or more layouts, a sanitizer), a registry entry, a doc in

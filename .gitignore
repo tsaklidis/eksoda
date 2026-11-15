@@ -40,5 +40,6 @@ backups/
 eksoda-root-ca.crt
 *.dump
 
-# Claude Code: keep shared project config, ignore personal overrides
-.claude/settings.local.json
+# Local assistant configuration (kept out of the repository)
+CLAUDE.md
+.claude/

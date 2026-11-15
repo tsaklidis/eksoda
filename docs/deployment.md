@@ -253,7 +253,7 @@ To restore on a new host, run `make prod-up`, then `make restore`.
    make sanitize-fixture PROVIDER=<code> IN=/abs/raw.html OUT=tests/fixtures/<code>/<name>.html
    ```
 
-4. **Fix the parser** with the `add-provider` skill (a new layout of the provider), or for a new label, extend `apps/receipts/vocabulary.py`. Then:
+4. **Fix the parser.** For a changed page, add a new layout to the provider under `apps/receipts/providers/<code>/` (TD §9.7). For a new label, extend `apps/receipts/vocabulary.py`. Then:
    - review the golden-file diff
    - run `make check`
    - deploy (§4)

@@ -250,7 +250,7 @@ None of these appear in the single real sample. Synthetic variants built
 from the sample cover credit notes, cancellations, cash, missing MARK,
 missing optional fields, a 24% fee line and a negative discount line
 (`backend/tests/receipts/providers/test_impact_variants.py`). Replace
-them with real sanitized receipts (`receipt-fixture` skill) as they
+them with real sanitized receipts (`make sanitize-fixture`, `docs/setup.md` §5) as they
 become available:
 
 - Discount, coupon or promotion lines (negative lines, line type codes).

@@ -56,28 +56,22 @@ Eksoda collects those pages for a household and answers everyday questions:
 
 ## How it works
 
-```mermaid
-flowchart LR
-    A[Android app<br/>scans QR code] -->|POST /receipts/import| B[REST API]
-    B -->|import job| Q[(Redis queue)]
-    Q --> W[Celery worker]
-    W -->|SSRF-safe HTTPS fetch| P[Provider receipt page]
-    W --> X[Provider adapter<br/>parse and validate]
-    X --> D[(PostgreSQL)]
-    D --> M[Matching and<br/>price normalization]
-    B -->|receipts, products,<br/>prices, analytics| A
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/architecture-dark.svg">
+  <img alt="How Eksoda imports a receipt: the Android app sends the link to the REST API, which queues an import job; a Celery worker fetches the provider's page over HTTPS, the provider adapter parses and validates it, lines are matched to products, and everything is stored in PostgreSQL, which the API queries." src="docs/images/architecture-light.svg">
+</picture>
 
 1. **Submission.** The client submits a receipt link. The API checks that the host belongs to a supported provider, records an import job, and answers immediately.
-2. **Fetch and parse.** A worker fetches the page through a hardened fetcher:
+2. **Fetch.** A worker fetches the page through a hardened fetcher:
    - provider host allowlist
    - public IP addresses only
    - no redirects
    - size and time limits
-
-   The provider's adapter turns the page into a canonical receipt.
-3. **Validate and store.** Totals, VAT and line sums are cross-checked. Discrepancies are recorded, never "corrected". The receipt, its merchant, store and lines are stored in one transaction.
-4. **Matching.** Lines are matched to household products, and unit prices are normalized. Failed imports keep a stable error code and are retried on a schedule.
+3. **Parse and validate.** The provider's adapter turns the page into a canonical receipt. Totals, VAT and line sums are cross-checked. Discrepancies are recorded, never "corrected".
+4. **Match and store.**
+   - Lines are matched to household products, and unit prices are normalized.
+   - The receipt, its merchant, store and lines are stored in one transaction.
+   - Failed imports keep a stable error code and are retried on a schedule.
 
 ## Privacy and security
 
