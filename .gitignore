@@ -1,0 +1,32 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Django
+backend/staticfiles/
+backend/media/
+
+# Operations
+backups/
+eksoda-root-ca.crt
+
+# Claude Code: keep shared project config, ignore personal overrides
+.claude/settings.local.json
