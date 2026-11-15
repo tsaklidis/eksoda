@@ -1,0 +1,39 @@
+# Development overrides, merged automatically by `docker compose`.
+# The source is bind-mounted; the virtualenv lives in the image at /opt/venv.
+
+x-backend-dev: &backend-dev
+  build:
+    context: ./backend
+    target: dev
+  image: eksoda-backend:dev
+  environment:
+    DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-config.settings.dev}
+  volumes:
+    - ./backend:/app
+
+services:
+  db:
+    # Host port is configurable to avoid clashing with other local PostgreSQL servers.
+    ports:
+      - "127.0.0.1:${DB_HOST_PORT:-55432}:5432"
+
+  migrate:
+    <<: *backend-dev
+
+  api:
+    <<: *backend-dev
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    ports:
+      - "127.0.0.1:${API_HOST_PORT:-8000}:8000"
+
+  worker:
+    <<: *backend-dev
+    command:
+      - watchfiles
+      - --filter
+      - python
+      - celery -A config worker -Q imports,maintenance -c 2 -l info
+      - /app
+
+  beat:
+    <<: *backend-dev

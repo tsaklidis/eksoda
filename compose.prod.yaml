@@ -1,0 +1,121 @@
+# Production overrides (TD §3.2) for a host on the home network, reached locally and
+# through the VPN. Use through make (`make prod-up`, `PROD=1`) or:
+#   docker compose -f compose.yaml -f compose.prod.yaml up -d --build
+# Only the proxy is published. Sizes suit a small host such as a Raspberry Pi 4 (4 GB);
+# raise WEB_CONCURRENCY / CELERY_CONCURRENCY on bigger machines. Memory limits apply only
+# where the kernel enables the cgroup memory controller (docs/deployment.md).
+
+x-backend-prod: &backend-prod
+  # Build steps (uv downloading wheels) use the host's network. On a host whose DNS
+  # server is a Pi-hole on the same machine in "local requests only" mode, queries from
+  # the build container's bridge subnet are silently dropped and the build fails. The
+  # running containers are unaffected: compose's network uses Docker's embedded DNS.
+  build:
+    network: host
+  restart: unless-stopped
+  environment:
+    DJANGO_SETTINGS_MODULE: config.settings.prod
+    LOG_FORMAT: json  # structured logs in production (requirements §16), whatever .env says
+  logging: &logging
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  db:
+    restart: unless-stopped
+    logging: *logging
+    mem_limit: 512m
+
+  redis:
+    restart: unless-stopped
+    logging: *logging
+    # Cache keys expire; broker keys do not, so volatile-lru never evicts queued tasks.
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "64mb", "--maxmemory-policy", "volatile-lru"]
+    mem_limit: 128m
+
+  migrate:
+    <<: *backend-prod
+    restart: "no"
+
+  api:
+    <<: *backend-prod
+    command:
+      - gunicorn
+      - config.wsgi
+      - --bind=0.0.0.0:8000
+      - --workers=${WEB_CONCURRENCY:-2}
+      - --timeout=30
+      - --max-requests=1000
+      - --max-requests-jitter=100
+    mem_limit: 512m
+
+  worker:
+    <<: *backend-prod
+    command:
+      - celery
+      - -A
+      - config
+      - worker
+      - -Q
+      - imports,maintenance
+      - -c
+      - ${CELERY_CONCURRENCY:-1}
+      - --max-tasks-per-child=200
+      - -l
+      - info
+    mem_limit: 384m
+
+  beat:
+    <<: *backend-prod
+    mem_limit: 192m
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env (the host name clients use, e.g. eksoda.lan)}
+      HTTP_PORT: ${HTTP_PORT:-80}
+      HTTPS_PORT: ${HTTPS_PORT:-443}
+    # The same port numbers inside and out, so Caddy's redirects carry the right port.
+    # Reachable on the LAN and through the VPN only: never forward these ports on the
+    # router.
+    ports:
+      - "${HTTP_PORT:-80}:${HTTP_PORT:-80}"
+      - "${HTTPS_PORT:-443}:${HTTPS_PORT:-443}"
+    volumes:
+      - ./ops/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    mem_limit: 128m
+
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    logging: *logging
+    command: ["/ops/backup.sh", "loop"]
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER:-eksoda}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-eksoda}
+      PGDATABASE: ${POSTGRES_DB:-eksoda}
+      BACKUP_HOUR_UTC: ${BACKUP_HOUR_UTC:-1}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+    volumes:
+      - ./ops/backup.sh:/ops/backup.sh:ro
+      - ${BACKUP_DIR:-./backups}:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    mem_limit: 128m
+
+volumes:
+  caddy_data:
+  caddy_config:

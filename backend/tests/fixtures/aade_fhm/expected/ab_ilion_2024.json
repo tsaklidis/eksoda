@@ -1,0 +1,124 @@
+{
+  "branch": {
+    "address": {
+      "city": "ΙΛΙΟΝ",
+      "country": null,
+      "number": null,
+      "postal_code": "13121",
+      "street": "ΘΗΒΩΝ ΚΑΙ ΙΔΟΜΕΝΕΟΥΣ Η ΑΝΩΝΥΜΗ ΟΔΟΥ 0"
+    },
+    "number": null
+  },
+  "coverage": {
+    "cross_checked": false,
+    "issue_time": "exact",
+    "line_items": false,
+    "line_tax_amounts": false,
+    "mydata_registered": false,
+    "official_codes": false
+  },
+  "culture": "en",
+  "document": {
+    "currency": "EUR",
+    "formatted_number": "1072-27935",
+    "issued_at": "2024-05-17T09:51:00+03:00",
+    "issued_date": "2024-05-17",
+    "kind": "sale",
+    "number": "27935",
+    "series": "1072",
+    "type_code": null,
+    "type_label": "ΑΠΟΔΕΙΞΗ ΠΑΡΟΧΗΣ ΥΠΗΡΕΣΙΩΝ - ΑΠΟΔΕΙΞΗ ΛΙΑΝΙΚΗΣ ΠΩΛΗΣΗΣ"
+  },
+  "identity": {
+    "cancellation_mark": null,
+    "mark": null,
+    "source_key": "fhm:FGG18025203:00686373",
+    "transmission_failure": false,
+    "uid": null
+  },
+  "issuer": {
+    "activity": null,
+    "address": null,
+    "country_code": "GR",
+    "gemi_number": null,
+    "legal_name": "ΑΛΦΑ ΒΗΤΑ ΒΑΣΙΛΟΠΟΥΛΟΣ ΜΟΝΟΠΡΟ",
+    "tax_office": null,
+    "vat_number": "094025817"
+  },
+  "lines": [],
+  "notices": [],
+  "parser_version": "aade_fhm/1",
+  "payments": [
+    {
+      "amount": "34.93",
+      "derived": true,
+      "method": "cash",
+      "method_code": null,
+      "method_label": null,
+      "tip": "0"
+    }
+  ],
+  "provider_code": "aade_fhm",
+  "provider_payload": {
+    "alerts": [
+      "Η ταμειακή μηχανή (ΦΗΜ) με κωδικό FGG18025203 σήμερα 14-11-2026 δεν είναι ενεργή ή είναι αδήλωτη."
+    ],
+    "record": {
+      "address": "ΘΗΒΩΝ ΚΑΙ ΙΔΟΜΕΝΕΟΥΣ Η ΑΝΩΝΥΜΗ ΟΔΟΥ 0 TK:13121 ΙΛΙΟΝ",
+      "card": "€ 0.00",
+      "currency": "0# Euro Member Countries",
+      "daily_sequence": "35",
+      "fuel_code": "#",
+      "fuel_liters": "0",
+      "gross": "€ 34.93",
+      "issued_at": "2024-05-17 09:51",
+      "name": "ΑΛΦΑ ΒΗΤΑ ΒΑΣΙΛΟΠΟΥΛΟΣ ΜΟΝΟΠΡΟ",
+      "net_A": "€ 0.00",
+      "net_B": "€ 24.87",
+      "net_C": "€ 5.51",
+      "net_D": "€ 0.00",
+      "net_E": "€ 0.00",
+      "number": "27935",
+      "power_supply": "Αφορά μόνο το πετρέλαιο θέρμανσης",
+      "progressive": "686373",
+      "register": "FGG18025203",
+      "series": "1072",
+      "type_label": "ΑΠΟΔΕΙΞΗ ΠΑΡΟΧΗΣ ΥΠΗΡΕΣΙΩΝ - ΑΠΟΔΕΙΞΗ ΛΙΑΝΙΚΗΣ ΠΩΛΗΣΗΣ",
+      "vat": "094025817",
+      "vat_A": "€ 0.00",
+      "vat_B": "€ 3.23",
+      "vat_C": "€ 1.32",
+      "vat_D": "€ 0.00",
+      "z_number": "1660"
+    }
+  },
+  "source_url": "https://www1.aade.gr/tameiakes/myweb/q1.php?SIG=FGG1802520300686373000000000000000000000000000000240517095134.93",
+  "totals": {
+    "deductions": null,
+    "digital_fee": null,
+    "discount": null,
+    "fees": null,
+    "gross": "34.93",
+    "gross_before_discount": null,
+    "net": "30.38",
+    "other_taxes": null,
+    "stamp_duty": null,
+    "vat": "4.55",
+    "withheld": null
+  },
+  "unknown_fields": {},
+  "vat_breakdown": [
+    {
+      "category_code": "2",
+      "net": "24.87",
+      "rate": "13",
+      "vat": "3.23"
+    },
+    {
+      "category_code": "1",
+      "net": "5.51",
+      "rate": "24",
+      "vat": "1.32"
+    }
+  ]
+}

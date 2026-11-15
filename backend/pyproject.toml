@@ -1,0 +1,111 @@
+[project]
+name = "eksoda-backend"
+version = "0.1.0"
+description = "Household expense and receipt intelligence backend"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "django>=5.2,<5.3",
+    "djangorestframework>=3.16",
+    "django-filter>=25.1",
+    "drf-spectacular[sidecar]>=0.28",
+    "djangorestframework-simplejwt>=5.5",
+    "psycopg[binary]>=3.2",
+    "celery[redis]>=5.5",
+    "django-environ>=0.12",
+    "beautifulsoup4>=4.13",
+    "lxml>=5.3",
+    "urllib3>=2.3",
+    "certifi>=2025.1.31",
+    "argon2-cffi>=23.1",
+    "whitenoise>=6.8",
+    "python-json-logger>=3.2",
+    "sentry-sdk>=2.20",
+    "gunicorn>=23",
+    "tzdata>=2025.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-django>=4.9",
+    "pytest-cov>=6.0",
+    "factory-boy>=3.3",
+    "ruff>=0.9",
+    "mypy>=1.14",
+    "django-stubs>=5.1",
+    "djangorestframework-stubs>=3.15",
+    "watchfiles>=1.0",
+]
+
+[tool.uv]
+package = false
+
+# --- ruff ---------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+extend-exclude = ["**/migrations/*.py"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "DJ", "S", "SIM", "RUF", "PT", "C4", "DTZ"]
+ignore = [
+    "E501",    # line length is handled by the formatter
+    "RUF001",  # Greek letters in strings are intentional (receipt content)
+    "RUF002",
+    "RUF003",
+    "RUF012",  # DRF/Django class attributes (permission_classes, fields, ...)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"config/settings/*.py" = ["F403", "F405"]
+# NULL means "absent" for identity and code columns: the partial unique constraints
+# (MARK, UID, source key, branch number) and "unknown" values depend on it.
+"apps/*/models.py" = ["DJ001"]
+"tests/**" = ["S101", "S105", "S106", "S311"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config", "tests"]
+
+# --- pytest -------------------------------------------------------------------
+[tool.pytest.ini_options]
+# --ds wins over DJANGO_SETTINGS_MODULE from the container environment.
+addopts = "--ds=config.settings.test -ra --strict-markers"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+pythonpath = ["."]
+markers = [
+    "live: talks to real external services; runs only with RUN_LIVE_TESTS=1",
+    "slow: slow tests",
+]
+filterwarnings = [
+    "error::RuntimeWarning",
+    # WhiteNoise: STATIC_ROOT only exists in the production image (collectstatic).
+    "ignore:No directory at:UserWarning",
+]
+
+# --- coverage -----------------------------------------------------------------
+[tool.coverage.run]
+source = ["apps", "config"]
+omit = [
+    "*/migrations/*",
+    "config/wsgi.py",
+    "config/asgi.py",
+    "config/settings/dev.py",
+    "config/settings/prod.py",
+]
+branch = true
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+skip_covered = true
+
+# --- mypy (informational until stabilized) -------------------------------------
+[tool.mypy]
+python_version = "3.13"
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+ignore_missing_imports = true
+check_untyped_defs = true
+
+[tool.django-stubs]
+django_settings_module = "config.settings.test"

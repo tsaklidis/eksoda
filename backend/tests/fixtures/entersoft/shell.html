@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>|Entersoft</title>
+<meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+
+
+
+
+<!-- Allow partial views to inject their own CSS -->
+
+
+</head>
+<body class="body-small pace-done white-bg no-margins">
+<div class="Page__ViewInvoice">
+<div class="gray-bg page-wrapper-shaddow">
+<div class="navbar-wrapper">
+<nav class="navbar navbar-fixed-top navbar-expand-lg navbar-default navbar-light" role="navigation">
+<div class="container container_navig" style="min-height:64px;">
+<div class="navbar-header page-scroll">
+<img alt="Entersoft" class="entersoftLogo" src="/Images/ENTERSOFTONE.svg"/>
+<div class="attachmentsContainer">
+<div id="attachmentsList">
+<a href="https://mydatapi.aade.gr/myDATA/TimologioQR/QRInfo?q=REDACTED" rel="noopener noreferrer" target="_blank">
+<span class="myMenuBtn btn btn-navbar">
+                        Παραστατικό (ΑΑΔΕ)
+                    </span>
+</a>
+</div>
+</div>
+</div>
+</div>
+</nav>
+</div>
+</div>
+<!-- Main view  -->
+<div class="container doc-container-ViewInvoice">
+<div class="h_iframe_container">
+<div id="loadingMessage">
+<h2>Loading...</h2>
+<div>
+<i aria-hidden="true" class="fa fa-spinner fa-spin fa-lg"></i>
+</div>
+</div>
+<div class="h_iframe">
+<iframe allowfullscreen="" data-auto-download="false" data-download-token="" frameborder="0" id="iframeContent" src="/api/GetInvoice?contentType=PEPPOL&amp;intRefDocID=00000000-0000-4000-8000-000000000000&amp;hashToken=0xxx0000&amp;ofenm=-1&amp;isPreview=True" title="Invoice Viewer">
+</iframe>
+</div>
+</div>
+</div>
+</div>
+
+</body>
+</html>

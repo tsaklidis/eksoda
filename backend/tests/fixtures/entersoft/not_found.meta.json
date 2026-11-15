@@ -1,0 +1,1 @@
+{"url": "https://e-invoicing.gr/edocuments/ViewInvoice/-1/00000000-0000-4000-8000-000000000000_0xxx0000", "description": "Document endpoint answer for an unknown document (served with HTTP 418)", "expect": {"error": "receipt_not_found"}}
