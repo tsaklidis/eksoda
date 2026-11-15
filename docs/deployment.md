@@ -161,7 +161,7 @@ Notes:
 **Automatic:**
 
 - **When:** the `backup` service writes `eksoda-YYYYMMDD-HHMMSS.dump` (custom format) once a day after `BACKUP_HOUR_UTC` (default 01:00 UTC). If it was down at that hour, it catches up when it starts.
-- **Where:** into `BACKUP_DIR`, as a temporary file renamed when complete.
+- **Where:** into `BACKUP_DIR`, as a temporary file renamed when complete. The directory and the dumps belong to `BACKUP_OWNER` (default `1000:1000`, the Pi's first user) and are readable by that user only, so `make backup` and `make restore` work without `sudo`.
 - **Retention:** dumps older than `BACKUP_RETENTION_DAYS` (30) are deleted after each new one.
 - **Deleted data:** receipts a user deleted stay in older dumps until those dumps expire (requirements §15.4).
 - **Off-host copies:** a dump on the same disk does not survive a dead disk. Copy `BACKUP_DIR` elsewhere regularly, for example with a cron job on another machine:

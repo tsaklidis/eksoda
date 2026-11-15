@@ -112,7 +112,7 @@ prod-ca: ## Export the proxy's local root CA certificate (install it on each cli
 
 backup: ## Dump the database now into BACKUP_DIR (default backups/); PROD=1 for production
 	@mkdir -p "$(BACKUP_DIR)"
-	@f="$(BACKUP_DIR)/eksoda-$$(date -u +%Y%m%d-%H%M%S).dump"; \
+	@umask 077; f="$(BACKUP_DIR)/eksoda-$$(date -u +%Y%m%d-%H%M%S).dump"; \
 	if $(COMPOSE) exec -T db sh -c 'pg_dump -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -Fc' > "$$f.partial"; then \
 		mv "$$f.partial" "$$f" && echo "Wrote $$f"; \
 	else rm -f "$$f.partial"; echo "Backup failed"; exit 1; fi

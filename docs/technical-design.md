@@ -184,7 +184,7 @@ CMD ["gunicorn", "config.wsgi", "-b", "0.0.0.0:8000", "-w", "3", "--timeout", "3
 | `worker` | backend | `celery -A config worker -Q imports,maintenance -c 2 -l info` | dev: wrapped in `watchfiles` for auto-reload |
 | `beat` | backend | `celery -A config beat -l info -s /tmp/celerybeat-schedule` | Exactly one instance |
 | `proxy` (prod) | `caddy:2-alpine` | `ops/Caddyfile` | LAN and VPN only. HTTPS for `$DOMAIN` with a certificate from Caddy's local CA (`tls internal`, root exported by `make prod-ca`). Listens on `HTTP_PORT`/`HTTPS_PORT` (default 80/443), the same numbers inside and out, with an explicit redirect that keeps the port. 1 MB body cap, no access log, no active health check (it would send `Host: api:8000`) |
-| `backup` (prod) | `postgres:17-alpine` | `ops/backup.sh loop` | One `pg_dump -Fc` a day after `BACKUP_HOUR_UTC` into `BACKUP_DIR` (default `./backups`), written under a temporary name; deletes dumps older than `BACKUP_RETENTION_DAYS` (30). Starts after `migrate` |
+| `backup` (prod) | `postgres:17-alpine` | `ops/backup.sh loop` | One `pg_dump -Fc` a day after `BACKUP_HOUR_UTC` into `BACKUP_DIR` (default `./backups`), written under a temporary name and owned by `BACKUP_OWNER` (the host user); deletes dumps older than `BACKUP_RETENTION_DAYS` (30). Starts after `migrate` |
 
 - `compose.yaml` holds everything shared.
 - `compose.override.yaml` (dev, applied automatically) switches to the

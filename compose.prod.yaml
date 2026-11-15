@@ -106,6 +106,8 @@ services:
       PGDATABASE: ${POSTGRES_DB:-eksoda}
       BACKUP_HOUR_UTC: ${BACKUP_HOUR_UTC:-1}
       BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+      # uid:gid of the host user who runs make backup / make restore.
+      BACKUP_OWNER: ${BACKUP_OWNER:-1000:1000}
     volumes:
       - ./ops/backup.sh:/ops/backup.sh:ro
       - ${BACKUP_DIR:-./backups}:/backups

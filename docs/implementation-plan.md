@@ -820,13 +820,19 @@ unchanged). `make check`: 718 tests, 98% coverage. In summary:
 
 ### Carried after M6
 
-- Deploy to the Raspberry Pi. On the host, first:
-  - enable the cgroup memory controller
-  - choose proxy ports or move Pi-hole's web server
-  - add the Pi-hole local DNS record
-  - prefer an SSD, or at least off-host backup copies
-
-  Then install the exported root CA on client devices.
+- **Deployed to the Raspberry Pi on 2026-11-15**, as `https://eksoda.lan:8443` (HTTP on 8081).
+  - **What runs:** all services are healthy. The worker resolves the provider hosts, and logs are JSON.
+  - **Tested there:** the daily dump, `make backup PROD=1`, and `make restore PROD=1` on the still-empty database.
+  - **Fixes from the deployment:**
+    - the build runs on the host network (Pi-hole dropped DNS from the build container)
+    - the backup service gives the directory and the dumps to `BACKUP_OWNER` (they were root-owned, so `make backup` and `make restore` failed for the host user)
+    - manual dumps are mode 600
+  - **Still to do on the host (owner):**
+    - enable the cgroup memory controller (memory limits are ignored until then)
+    - add the Pi-hole local DNS record `eksoda.lan`
+    - bootstrap the first owner
+    - install the root CA on client devices
+    - prefer an SSD, or at least off-host backup copies
 - Android app: its release network security config must trust the
   server's local CA (`docs/android-app.md` §10). Until then, the release
   build cannot reach the server.

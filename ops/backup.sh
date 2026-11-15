@@ -14,14 +14,22 @@ set -eu
 DIR=/backups
 HOUR=${BACKUP_HOUR_UTC:-1}
 RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
+# The host user (uid:gid) who owns the directory and the dumps, so that `make backup`
+# and `make restore` work without sudo. Dumps stay readable by that user only.
+OWNER=${BACKUP_OWNER:-}
 umask 077
 
 log() { echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) backup: $*"; }
+
+give_to_owner() {
+    if [ -n "$OWNER" ]; then chown "$OWNER" "$@"; fi
+}
 
 take_backup() {
     name="eksoda-$(date -u +%Y%m%d-%H%M%S).dump"
     if pg_dump -Fc -f "$DIR/.$name.partial"; then
         mv "$DIR/.$name.partial" "$DIR/$name"
+        give_to_owner "$DIR/$name"
         log "wrote $name ($(du -h "$DIR/$name" | cut -f1))"
     else
         rm -f "$DIR/.$name.partial"
@@ -34,6 +42,9 @@ prune() {
     find "$DIR" -maxdepth 1 -name 'eksoda-*.dump' -mtime "+$((RETENTION_DAYS - 1))" \
         -print -delete | sed 's/^/pruned /'
 }
+
+give_to_owner "$DIR"
+find "$DIR" -maxdepth 1 -name 'eksoda-*.dump' -exec sh -c '[ -n "$1" ] && chown "$1" "$2"' _ "$OWNER" {} \;
 
 case "${1:-once}" in
 once)
