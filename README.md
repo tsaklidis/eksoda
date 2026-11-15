@@ -1,191 +1,176 @@
 # Eksoda
 
-The backend for a household expense and receipt app. It imports Greek
-e-receipts from the URL in their QR codes, then keeps product price
-history and household spending analytics. An Android scanner app and a
-web frontend will consume this API later.
+**Household spending, built from the receipts you already get.**
 
-**Status:** Milestones 1 (foundation: authentication, households,
-Docker stack), 2 and 2b (receipt parsing for Impact, Entersoft and AADE
-cash-register receipts, SSRF-safe fetcher, validation), 3 (import
-pipeline, stored receipts, import and receipt APIs), 4 (products,
-matching, price history and comparison) and 5 (filters, merchants,
-categories and spending analytics) and 6 (production stack, backups,
-Sentry, security pass) are done. See `docs/implementation-plan.md` §6.
+Eksoda turns Greek electronic receipts into a searchable record of what a
+household buys: every line item, product price histories, price comparisons
+between shops, and monthly spending analytics. Receipts are added by scanning
+the QR code printed on them. There is no typing and no photo OCR.
 
-## Requirements
+This repository contains the backend (a Django REST API with background
+workers), the Android client that is being built against it, and the full
+design documentation.
 
-Docker (with Compose v2) and `make`. Nothing else is installed on the
-host. Python, PostgreSQL and Redis all run in containers.
+## Why
 
-## Quick start
+Greek retailers issue their receipts as electronic documents registered with
+AADE's myDATA platform. The QR code on the paper slip links to that document,
+either on the retailer's e-invoicing provider's site or on AADE's own check
+page. The data is structured and exact, down to quantities, unit prices and
+VAT, but each receipt sits on its own web page.
 
-```bash
-make up                                                # builds images, starts the dev stack
-make bootstrap EMAIL=you@example.com HOUSEHOLD="Home"  # first owner (prompts for a password)
+Eksoda collects those pages for a household and answers everyday questions:
+
+- How much did we spend this month, and how does it compare with last month?
+- Where does the money go: which shops and which categories?
+- What did we pay for this product last time, and where is it cheapest?
+- How has its price per kilo or per liter changed over time?
+
+## Features
+
+- **Receipt import from a link.** Submit the QR-code URL. A background job fetches the page, parses it, validates the totals and stores the receipt. Duplicate submissions, retries and concurrent imports never create a second copy.
+- **Three receipt sources:**
+  - Impact
+  - Entersoft (used by LIDL and others)
+  - the AADE cash-register check page
+
+  Each source is an isolated adapter that maps the page to one canonical model aligned with myDATA. A new source or page layout is a self-contained change.
+- **Line-level data.** Every line keeps its original description and amounts. Lines are classified as products, discounts and fees, such as bag fees and deposits.
+- **Products and prices:**
+  - Items become household products automatically.
+  - Package sizes such as `1L` or `500G` are parsed, so prices are normalized per kg, liter or piece.
+  - Each product has a price history and a comparison between shops.
+  - Uncertain matches go to a review queue instead of being guessed.
+- **Spending analytics:**
+  - summary against the previous period
+  - spending by category and by merchant
+  - monthly trend and top products
+  - figures that always reconcile with the receipt totals
+- **Households:** owner and member roles, invite-only registration, and strict data isolation between households.
+- **Operations:**
+  - Docker-only development and deployment
+  - health checks and structured JSON logs
+  - optional Sentry
+  - daily database backups with a tested restore
+  - a Django admin for support work
+
+## How it works
+
+```mermaid
+flowchart LR
+    A[Android app<br/>scans QR code] -->|POST /receipts/import| B[REST API]
+    B -->|import job| Q[(Redis queue)]
+    Q --> W[Celery worker]
+    W -->|SSRF-safe HTTPS fetch| P[Provider receipt page]
+    W --> X[Provider adapter<br/>parse and validate]
+    X --> D[(PostgreSQL)]
+    D --> M[Matching and<br/>price normalization]
+    B -->|receipts, products,<br/>prices, analytics| A
 ```
 
-| URL | What |
+1. **Submission.** The client submits a receipt link. The API checks that the host belongs to a supported provider, records an import job, and answers immediately.
+2. **Fetch and parse.** A worker fetches the page through a hardened fetcher:
+   - provider host allowlist
+   - public IP addresses only
+   - no redirects
+   - size and time limits
+
+   The provider's adapter turns the page into a canonical receipt.
+3. **Validate and store.** Totals, VAT and line sums are cross-checked. Discrepancies are recorded, never "corrected". The receipt, its merchant, store and lines are stored in one transaction.
+4. **Matching.** Lines are matched to household products, and unit prices are normalized. Failed imports keep a stable error code and are retried on a schedule.
+
+## Privacy and security
+
+Receipts are personal data, and receipt links act as bearer credentials. The
+design treats both accordingly:
+
+- **Receipt links:**
+  - stored only for the household that submitted them
+  - never logged; logs carry the host and a fingerprint, and tests enforce this
+  - scrubbed from error reports
+- **Personal fields on receipt pages are never stored:**
+  - customer or loyalty codes
+  - card transaction ids
+  - terminal ids
+  - signatures
+
+  Parsers read an allowlist of fields, not a blocklist.
+- **Household isolation:** every household-scoped endpoint goes through one access path. A test enumerates every API route and fails if a new one is not covered by the isolation checks.
+- **Accounts and abuse limits:**
+  - Argon2 password hashing
+  - short-lived JWT access tokens with rotating, revocable refresh tokens
+  - rate limits on login, registration, imports and the admin login
+  - request size limits
+
+## Tech stack
+
+| Area | Technology |
 |---|---|
-| http://localhost:8000/api/docs/ | Swagger UI. Log in via `POST /api/v1/auth/login`, then **Authorize** with the access token |
-| http://localhost:8000/api/schema/ | OpenAPI schema (the API contract) |
-| http://localhost:8000/admin/ | Django admin (`make superuser`, or `make bootstrap ARGS=--superuser`) |
-| http://localhost:8000/healthz, `/readyz` | Liveness and readiness checks |
+| API | Python 3.13, Django 5.2, Django REST Framework, drf-spectacular (OpenAPI 3) |
+| Background jobs | Celery with Redis as the broker. Job state and retry schedule live in PostgreSQL |
+| Database | PostgreSQL 17 |
+| Parsing | BeautifulSoup and lxml, with strict decimal and date parsing for both Greek and English page variants |
+| Deployment | Docker Compose, gunicorn, Caddy (HTTPS), scheduled `pg_dump` backups. Sized to run on a Raspberry Pi 4 |
+| Quality | pytest with about 740 tests and 98% coverage, ruff, golden-file tests on sanitized real receipts |
+| Android client | Kotlin, Jetpack Compose, Room, WorkManager, CameraX with ML Kit (in development) |
 
-`make up` creates `.env` from `.env.example` the first time. Edit it to
-change ports, rate limits or open registration. The dev stack publishes
-only to `127.0.0.1`: the API on `API_HOST_PORT` (default 8000) and
-PostgreSQL on `DB_HOST_PORT` (default 55432).
+## Getting started
 
-## Daily commands
-
-```bash
-make help                               # all targets
-make test ARGS="tests/accounts -k login"
-make check                              # lint, format, migrations check, tests + coverage (must pass)
-make makemigrations && make migrate
-make lock                               # after changing dependencies in backend/pyproject.toml
-make logs ARGS=worker
-make down
-make clean                              # also deletes the dev database volume
-```
-
-## Production
-
-`compose.prod.yaml` adds HTTPS through Caddy, automatic restarts,
-JSON logs and daily database backups. Only the proxy is published.
-
-- **Access:** the home network and the VPN only, at a local name such as
-  `https://eksoda.lan:8443`.
-- **Certificate:** Caddy signs it with its own local CA. Export the root
-  with `make prod-ca` and install it on each device.
-- **Size:** fits a Raspberry Pi 4, about 400 MB of RAM in all.
+Docker (with Compose v2) and `make` are the only requirements.
 
 ```bash
-make prod-up                                                 # build, migrate, start
-make bootstrap PROD=1 EMAIL=you@example.com HOUSEHOLD="Home"  # first owner
-make prod-logs ARGS="api worker"
+git clone https://github.com/tsaklidis/eksoda.git && cd eksoda
+make up                                                 # build and start the development stack
+make bootstrap EMAIL=you@example.com HOUSEHOLD="Home"   # create the first user and household
 ```
 
-Set `DOMAIN`, `DJANGO_SECRET_KEY`, the database password and the
-allowed hosts in `.env` first. `docs/deployment.md` has:
+Then open the interactive API documentation at
+<http://localhost:8000/api/docs/>.
 
-- the full steps and the local DNS record
-- installing the CA on phones and computers
-- Raspberry Pi notes (ports taken by Pi-hole, memory limits, SD cards)
-- updates
-- the runbook for provider format changes
-
-## Backup and restore
-
-```bash
-make backup [PROD=1]                                          # pg_dump into backups/
-make restore FILE=backups/eksoda-….dump CONFIRM=yes [PROD=1]  # replaces the database
-```
-
-- Production also takes a dump every day and keeps 30 days of them.
-- `make restore` first saves a safety dump of the current database.
-- Copy `backups/` off the host regularly (`docs/deployment.md` §5).
-
-## Receipt tools (no database involved)
-
-Supported sources: Impact (`einvoice.impact.gr`), Entersoft (`e-invoicing.gr`, e.g. LIDL)
-and the AADE cash-register check page (`www1.aade.gr/tameiakes`, summary only).
-
-```bash
-make parse-receipt SRC="<receipt url>"                               # fetch + parse + validate
-make parse-receipt SRC=tests/fixtures/entersoft/lidl_21_lines.html ARGS=--json
-make sanitize-fixture PROVIDER=impact IN=/abs/path/raw.html OUT=tests/fixtures/impact/name.html
-make test-live URLS="<url> <url>"                                     # opt-in real-source tests
-```
-
-Receipt URLs work like passwords: anyone who has one can open the
-receipt. The commands print them masked. Keep raw saved pages outside
-the repository, and only commit fixtures produced by
-`sanitize-fixture`.
-
-## Services
-
-| Service | Role |
-|---|---|
-| `db` | PostgreSQL 17, the source of truth |
-| `redis` | Celery broker, cache and rate-limit counters. Disposable: no data lives only here |
-| `migrate` | One-shot `migrate` before `api`, `worker` and `beat` start |
-| `api` | Django + DRF (`runserver` in dev, gunicorn in prod) |
-| `worker` | Celery worker (queues `imports`, `maintenance`). Auto-reloads in dev |
-| `beat` | Celery beat: due imports every minute, daily maintenance |
-| `proxy` (prod) | Caddy: HTTPS with a local CA, the only published service (LAN and VPN) |
-| `backup` (prod) | Daily `pg_dump`, 30-day rotation |
-
-## Importing receipts
-
-1. `POST /api/v1/receipts/import` with `{"url": "<link from the QR code>"}`
-   answers `202` with an import. Sending the same link again answers `200`
-   with the existing import (`"duplicate": true`).
-2. The worker fetches and parses the page in the background. Follow it with
-   `GET /api/v1/receipt-imports/{id}`. Temporary failures are retried
-   automatically (about 1 min, 5 min, 30 min, 2 h, 6 h and 24 h later).
-3. A completed import points to its receipt: `GET /api/v1/receipts/{id}`.
-   A failed import shows its error code and can be retried with
-   `POST /api/v1/receipt-imports/{id}/retry`.
-
-Import jobs, receipts, merchants and stores are also in the admin, which
-can filter imports by status, provider and error code and retry them.
-
-## Products and prices
-
-- Each new item on a receipt becomes a household product automatically,
-  with its package size when the description states it (`… 1L`,
-  `… 195G`). The next purchase of that item at the same shop matches it.
-- If a shop reuses an item code for something else, the line waits in
-  `GET /api/v1/receipt-items/review` instead of being matched.
-- The same product bought at different shops starts as separate
-  products: merge them with `POST /api/v1/products/{id}/merge`.
-- `GET /api/v1/products/{id}/prices` gives the price history per kg,
-  liter or piece; `GET /api/v1/products/{id}/price-comparison` ranks
-  shops when their prices are comparable.
-- Receipts imported before matching existed are matched with
-  `make manage ARGS="backfill_matching"`.
-
-## Spending analytics
-
-`GET /api/v1/analytics/summary`, `spending-by-category`,
-`spending-by-merchant`, `monthly-trend` and `top-products` take `from`
-and `to` (household-local dates; the current month by default). They
-count active receipts in the household's currency that are not excluded
-by the user; credit notes count negative. Spending by category always
-adds up to total spending: lines without a product category use the
-merchant's default category (set by staff in the admin), and discounts,
-fees and unallocated amounts get their own buckets.
-
-For a populated dashboard in development, after `make bootstrap`:
-
-```bash
-make manage ARGS="seed_demo_data --household <household id>"
-```
-
-## Accounts and households
-
-- Registration is **invite-only** by default (`REGISTRATION_OPEN=false`).
-  Steps:
-  1. The first owner is created with `make bootstrap`.
-  2. An owner creates an invitation code with
-     `POST /api/v1/households/{id}/invitations`.
-  3. A new person registers with `invite_code`, or an existing user
-     joins with `POST /api/v1/households/join`.
-- Household-scoped endpoints (receipts and imports) take an optional
-  `X-Household-ID` header. It is required only for users in more than
-  one household.
-- Errors always have the shape
-  `{"error": {"code": "...", "message": "...", "details": {...}}}`.
+- **[Setup guide](docs/setup.md):** local development, trying the API end to end, daily commands and configuration.
+- **[Deployment guide](docs/deployment.md):** production with HTTPS, backups and restore, monitoring, and running on a Raspberry Pi.
 
 ## Documentation
 
-| Doc | Contents |
+| Document | Contents |
 |---|---|
-| `docs/requirements.md` | What is built: scope, decisions, data model, API, rules |
-| `docs/technical-design.md` | How it is built: containers, modules, algorithms, tests |
-| `docs/implementation-plan.md` | Milestones, exit criteria, status |
-| `docs/deployment.md` | Production setup, Raspberry Pi notes, backups and restore, monitoring, runbook |
-| `docs/providers/` | The real page formats of Impact, Entersoft and the AADE check page |
-| `CLAUDE.md`, `.claude/` | Instructions and skills for Claude Code in this repo |
+| [Setup guide](docs/setup.md) | Running the project locally, using the API, development workflow |
+| [Deployment guide](docs/deployment.md) | Production stack, backups, monitoring, operations runbook |
+| [Requirements](docs/requirements.md) | Scope, decisions, data model, API and business rules |
+| [Technical design](docs/technical-design.md) | Architecture, modules, algorithms, security controls, testing strategy |
+| [Implementation plan](docs/implementation-plan.md) | Milestones, exit criteria and status |
+| [Provider formats](docs/providers/) | The observed page formats of each supported receipt source |
+| [Android app specification](docs/android-app.md) | The client's product and technical design, and the API it relies on |
+
+## Project status
+
+The server is feature-complete for its first release. Every milestone is done:
+
+- foundation
+- receipt providers
+- import pipeline
+- products and prices
+- analytics
+- operations hardening
+
+It is designed for a single household and runs comfortably on a Raspberry Pi.
+
+**Next:**
+
+- the Android client, which is in development
+- a web frontend
+- more receipt sources as new formats appear
+
+## Repository layout
+
+```text
+backend/            Django project: apps, settings, tests and sanitized receipt fixtures
+  apps/receipts/    Import pipeline, fetcher, validation and provider adapters
+  apps/products/    Products, matching, units and prices
+  apps/analytics/   Spending queries
+Android/            Android client (Kotlin, Jetpack Compose)
+docs/               Requirements, design, plans and guides
+ops/                Caddy configuration and backup script
+compose*.yaml       Development and production stacks
+Makefile            Every development and operations command
+```

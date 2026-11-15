@@ -15,6 +15,7 @@ against this API.
 | `docs/providers/impact.md` | The real Impact receipt page format |
 | `docs/requirements-review.md` | Why the requirements look the way they do |
 | `docs/android-app.md` | How the Android client uses this API, and the API gaps it found (§15) |
+| `docs/setup.md` | Local setup, trying the API, daily commands (linked from the README) |
 | `docs/deployment.md` | Production stack, Raspberry Pi notes, backup/restore, runbook |
 
 ## Ground rules

@@ -1183,5 +1183,6 @@ CI never depends on the live provider. Live tests are opt-in
     exist.
 12. `docker compose up` starts the whole development stack with only
     Docker installed on the host. A production compose profile exists.
-    The README documents setup, the first-owner bootstrap, running the
-    tests, backup and restore.
+    The documentation covers setup, the first-owner bootstrap and running
+    the tests (`docs/setup.md`, linked from the README), and backup and
+    restore (`docs/deployment.md`).
