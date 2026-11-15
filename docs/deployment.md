@@ -118,18 +118,13 @@ it as a trusted CA:
 
 | Device | How |
 |---|---|
-| Android | *Settings → Security & privacy → More security settings → Encryption & credentials → Install a certificate → CA certificate*. Browsers then trust it. The Eksoda app needs one more change (below) |
+| Android | *Settings → Security & privacy → More security settings → Encryption & credentials → Install a certificate → CA certificate*. Browsers then trust it |
 | iPhone / iPad | Open the file (AirDrop or Files) to install the profile, then turn it on under *Settings → General → About → Certificate Trust Settings* |
 | macOS | `sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain eksoda-root-ca.crt` |
 | Windows | `certutil -addstore Root eksoda-root-ca.crt` (as administrator) |
 | Firefox | Uses its own store: *Settings → Privacy & Security → Certificates → View Certificates → Authorities → Import* |
 
-**The Eksoda Android app.** Since Android 7, apps ignore user-installed CAs unless their network security config allows them. The app's release configuration currently trusts only system CAs, so it must do one of these:
-
-- **Bundle the root certificate** (stricter). Put `eksoda-root-ca.crt` in `res/raw/` and add a `<domain-config>` for the server's name with `<trust-anchors><certificates src="@raw/eksoda_root_ca"/></trust-anchors>`.
-- **Trust user CAs for that domain:** `<certificates src="user"/>`.
-
-See `docs/android-app.md` §10.
+**The Eksoda Android app** does not use this server (D22). It lives in a separate repository and needs no CA configuration.
 
 **Keep the CA:**
 

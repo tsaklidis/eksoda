@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <style name="Theme.Eksoda" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/eksoda_primary</item>
-        <item name="android:statusBarColor">?attr/colorPrimary</item>
-    </style>
-
-    <color name="eksoda_primary">#2E7D32</color>
-</resources>

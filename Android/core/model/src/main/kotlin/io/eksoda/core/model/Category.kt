@@ -1,9 +1,0 @@
-package io.eksoda.core.model
-
-data class Category(
-    val id: String,
-    val name: String,
-    val icon: String?,
-    val color: String?,
-    val isSystem: Boolean
-)

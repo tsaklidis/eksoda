@@ -8,8 +8,12 @@ between shops, and monthly spending analytics. Receipts are added by scanning
 the QR code printed on them. There is no typing and no photo OCR.
 
 This repository contains the backend (a Django REST API with background
-workers), the Android client that is being built against it, and the full
-design documentation.
+workers) and its design documentation.
+
+The Android app lives in its own repository. It works without this server
+(decision D22 in the [requirements](docs/requirements.md)): it runs the same
+receipt logic on the phone, so receipts never leave the device. This backend
+is the reference implementation and test oracle for that port.
 
 ## Why
 
@@ -106,7 +110,6 @@ design treats both accordingly:
 | Parsing | BeautifulSoup and lxml, with strict decimal and date parsing for both Greek and English page variants |
 | Deployment | Docker Compose, gunicorn, Caddy (HTTPS), scheduled `pg_dump` backups. Sized to run on a Raspberry Pi 4 |
 | Quality | pytest with about 740 tests and 98% coverage, ruff, golden-file tests on sanitized real receipts |
-| Android client | Kotlin, Jetpack Compose, Room, WorkManager, CameraX with ML Kit (in development) |
 
 ## Getting started
 
@@ -134,7 +137,6 @@ Then open the interactive API documentation at
 | [Technical design](docs/technical-design.md) | Architecture, modules, algorithms, security controls, testing strategy |
 | [Implementation plan](docs/implementation-plan.md) | Milestones, exit criteria and status |
 | [Provider formats](docs/providers/) | The observed page formats of each supported receipt source |
-| [Android app specification](docs/android-app.md) | The client's product and technical design, and the API it relies on |
 
 ## Project status
 
@@ -151,7 +153,7 @@ It is designed for a single household and runs comfortably on a Raspberry Pi.
 
 **Next:**
 
-- the Android client, which is in development
+- the standalone Android app (separate repository), which ports this backend's receipt logic to the phone
 - a web frontend
 - more receipt sources as new formats appear
 
@@ -162,7 +164,6 @@ backend/            Django project: apps, settings, tests and sanitized receipt 
   apps/receipts/    Import pipeline, fetcher, validation and provider adapters
   apps/products/    Products, matching, units and prices
   apps/analytics/   Spending queries
-Android/            Android client (Kotlin, Jetpack Compose)
 docs/               Requirements, design, plans and guides
 ops/                Caddy configuration and backup script
 compose*.yaml       Development and production stacks

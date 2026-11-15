@@ -24,17 +24,6 @@ htmlcov/
 backend/staticfiles/
 backend/media/
 
-# Android (build outputs, local SDK path, signing keys)
-Android/.gradle/
-Android/.kotlin/
-Android/**/build/
-Android/local.properties
-Android/captures/
-*.jks
-*.keystore
-*.apk
-*.aab
-
 # Operations
 backups/
 eksoda-root-ca.crt

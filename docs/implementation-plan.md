@@ -3,6 +3,11 @@
 **Based on:** `docs/requirements.md`
 **Date:** 2026-11-13
 
+> **2026-11-15 (D22):** the server MVP (M1–M6) is complete. It is now the
+> reference implementation for a standalone Android app with no server.
+> The app lives in a separate repository. Its plan and milestones (L0–L7)
+> are in that repository's `docs/android-standalone.md`.
+
 Each milestone leaves the application runnable and tested, and is
 reviewed before the next one starts. Section references (§) point to
 `docs/requirements.md`. "TD §" points to `docs/technical-design.md`.
@@ -833,9 +838,9 @@ unchanged). `make check`: 718 tests, 98% coverage. In summary:
     - bootstrap the first owner
     - install the root CA on client devices
     - prefer an SSD, or at least off-host backup copies
-- Android app: its release network security config must trust the
-  server's local CA (`docs/android-app.md` §10). Until then, the release
-  build cannot reach the server.
+- ~~Android app: its release network security config must trust the
+  server's local CA.~~ No longer applies: the Android app does not use
+  this server (D22) and moved to its own repository.
 - Two review notes left open:
   - NAT64/6to4 address forms are not in the fetcher's blocklist. This
     is theoretical: the allowed hosts are fixed.
